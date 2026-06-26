@@ -720,6 +720,8 @@ p  { font-size: 1.0625rem; line-height: 1.75; color: var(--gray); }
 }
 .trust-item:hover .trust-icon { background: rgba(201,145,58,0.2); border-color: var(--gold); }
 .trust-icon svg { color: var(--gold); width: 26px; height: 26px; }
+.value-icon { width: 64px; height: 64px; background: var(--gold-muted); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid var(--gold-border); }
+.value-icon svg { color: var(--gold); width: 28px; height: 28px; }
 .trust-item h4 { color: var(--white); font-size: 1.0625rem; margin-bottom: 9px; }
 .trust-item p  { color: rgba(255,255,255,0.58); font-size: 0.9375rem; }
 
