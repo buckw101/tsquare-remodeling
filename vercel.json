@@ -1,0 +1,6 @@
+{
+  "redirects": [
+    { "source": "/commercial.html", "destination": "/residential.html", "permanent": true },
+    { "source": "/commercial", "destination": "/residential.html", "permanent": true }
+  ]
+}
