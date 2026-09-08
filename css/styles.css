@@ -227,6 +227,11 @@ p  { font-size: 1.0625rem; line-height: 1.75; color: var(--gray); }
   justify-content: center;
 }
 .announce-close:hover { color: white; }
+/* Fallback offsets for before initAnnounceBar() measures the real height
+   (and for JS-off). The bar wraps as the viewport narrows; main.js keeps
+   --announce-h exact from there on. */
+@media (max-width: 720px) { :root { --announce-h: 58px; } }
+@media (max-width: 500px) { :root { --announce-h: 76px; } }
 .has-announce .nav { top: var(--announce-h); }
 .has-announce .hero { padding-top: calc(var(--nav-h) + var(--announce-h)); }
 .has-announce .page-hero { padding-top: calc(var(--nav-h) + var(--announce-h)); }

@@ -29,6 +29,18 @@ function initAnnounceBar() {
 
   document.documentElement.classList.add('has-announce');
 
+  // The bar wraps to 2-3 lines on narrow screens, so the nav/hero offsets
+  // can't assume the 44px default. Keep --announce-h matched to the real height.
+  const syncHeight = () => {
+    document.documentElement.style.setProperty('--announce-h', bar.offsetHeight + 'px');
+  };
+  syncHeight();
+  if (window.ResizeObserver) {
+    new ResizeObserver(syncHeight).observe(bar);
+  } else {
+    window.addEventListener('resize', syncHeight);
+  }
+
   const closeBtn = bar.querySelector('.announce-close');
   closeBtn?.addEventListener('click', () => {
     bar.style.transform = 'translateY(-100%)';
@@ -36,6 +48,7 @@ function initAnnounceBar() {
     setTimeout(() => {
       bar.remove();
       document.documentElement.classList.remove('has-announce');
+      document.documentElement.style.removeProperty('--announce-h');
       // Recalculate nav top
       const nav = document.getElementById('mainNav');
       if (nav) nav.style.top = '0';
