@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initBeforeAfterSliders();
   initCarousel();
   initGalleryFilters();
+  initLightbox();
   initFAQ();
   initBackToTop();
   initFormHandlers();
@@ -400,6 +401,86 @@ function validateForm(form) {
     form.querySelector('[required]')?.focus();
   }
   return valid;
+}
+
+/* ── PHOTO LIGHTBOX ───────────────────────────────────────── */
+function initLightbox() {
+  const frames = [...document.querySelectorAll('.ps-frame, .gallery-item')].filter(f => f.querySelector('img'));
+  if (!frames.length || typeof HTMLDialogElement === 'undefined') return;
+
+  const groups = {};
+  const icon = d => `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.25" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="${d}"/></svg>`;
+
+  const dlg = document.createElement('dialog');
+  dlg.className = 'lightbox';
+  dlg.setAttribute('aria-label', 'Project photo viewer');
+  dlg.innerHTML = `
+    <div class="lightbox-stage"><img alt="" /></div>
+    <p class="lightbox-caption" aria-live="polite"><span class="lightbox-text"></span><span class="lightbox-count"></span></p>
+    <button type="button" class="lightbox-btn lightbox-close" aria-label="Close photo viewer">${icon('M6 6l12 12M18 6L6 18')}</button>
+    <button type="button" class="lightbox-btn lightbox-prev" aria-label="Previous photo">${icon('M15 5l-7 7 7 7')}</button>
+    <button type="button" class="lightbox-btn lightbox-next" aria-label="Next photo">${icon('M9 5l7 7-7 7')}</button>`;
+  document.body.appendChild(dlg);
+
+  const img = dlg.querySelector('.lightbox-stage img');
+  const text = dlg.querySelector('.lightbox-text');
+  const count = dlg.querySelector('.lightbox-count');
+  const prev = dlg.querySelector('.lightbox-prev');
+  const next = dlg.querySelector('.lightbox-next');
+  let list = [], idx = 0, opener = null;
+
+  const captionOf = f => {
+    const tag = f.querySelector('.ps-tag')?.textContent.trim();
+    const cap = (f.querySelector('figcaption, .gallery-caption strong')?.textContent || '').trim();
+    return tag ? `${tag}: ${cap}` : cap;
+  };
+
+  const show = i => {
+    idx = (i + list.length) % list.length;
+    const f = list[idx], src = f.querySelector('img');
+    img.src = src.src; // full-size file, not the srcset pick
+    img.alt = src.alt;
+    text.textContent = captionOf(f);
+    count.textContent = list.length > 1 ? `${idx + 1} / ${list.length}` : '';
+    prev.hidden = next.hidden = list.length < 2;
+  };
+
+  frames.forEach(f => {
+    const key = f.classList.contains('gallery-item') ? 'gallery' : (f.closest('[data-lightbox-group]')?.dataset.lightboxGroup || 'misc');
+    (groups[key] = groups[key] || []).push(f);
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'ps-open';
+    btn.setAttribute('aria-label', `View larger photo: ${captionOf(f) || f.querySelector('img').alt}`);
+    btn.addEventListener('click', () => {
+      list = groups[key];
+      opener = btn;
+      show(list.indexOf(f));
+      dlg.showModal();
+      document.documentElement.style.overflow = 'hidden';
+    });
+    f.appendChild(btn);
+  });
+
+  prev.addEventListener('click', () => show(idx - 1));
+  next.addEventListener('click', () => show(idx + 1));
+  dlg.querySelector('.lightbox-close').addEventListener('click', () => dlg.close());
+  dlg.addEventListener('click', e => { if (e.target === dlg || e.target.classList.contains('lightbox-stage')) dlg.close(); });
+  dlg.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft' && list.length > 1) { e.preventDefault(); show(idx - 1); }
+    if (e.key === 'ArrowRight' && list.length > 1) { e.preventDefault(); show(idx + 1); }
+  });
+  dlg.addEventListener('close', () => { document.documentElement.style.overflow = ''; opener?.focus(); });
+
+  // Touch swipe
+  let x0 = null;
+  dlg.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  dlg.addEventListener('touchend', e => {
+    if (x0 === null || list.length < 2) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    if (Math.abs(dx) > 50) show(idx + (dx < 0 ? 1 : -1));
+    x0 = null;
+  });
 }
 
 /* ── LAZY IMAGE LOADING ───────────────────────────────────── */
