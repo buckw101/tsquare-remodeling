@@ -351,13 +351,24 @@ function initFormHandlers() {
       data._subject = 'New Estimate Request — T Square Remodeling';
       data._captcha = 'false';
 
+      // Give up after 60s so a slow mail service can't leave the button spinning forever
+      const ctrl  = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 60000);
+
       fetch('https://formsubmit.co/ajax/Brent@tsquareremodel.com', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
+        signal: ctrl.signal
       })
-      .then(res => res.json())
-      .then(() => {
+      .then(res => {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json().catch(() => ({}));
+      })
+      .then(result => {
+        // FormSubmit answers 200 even when it didn't deliver. Only an explicit "success: false" is a failure.
+        if (String(result.success) === 'false') throw new Error(result.message || 'not delivered');
+        clearTimeout(timer);
         btn.innerHTML        = '✓ Message Received — We\'ll Be In Touch Soon!';
         btn.style.background = 'var(--success)';
         btn.style.boxShadow  = '0 8px 24px rgba(22,163,74,0.35)';
@@ -369,7 +380,9 @@ function initFormHandlers() {
           form.reset();
         }, 4500);
       })
-      .catch(() => {
+      .catch(err => {
+        clearTimeout(timer);
+        console.warn('Estimate form:', err.message);
         btn.innerHTML = 'Something went wrong — please try again.';
         btn.disabled  = false;
         setTimeout(() => { btn.innerHTML = original; }, 3000);
